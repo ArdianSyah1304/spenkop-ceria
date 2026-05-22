@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spenkop Ceria - Aplikasi 7</title>
+    
+    <!-- Library Eksternal -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* CSS Variabel & Tema */
+        :root {
+            --bg-color: #f0f2f5;
+            --sidebar-color: #2c3e50;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --primary-color: #3498db;
+            --accent-color: #e67e22;
+            --danger-color: #e74c3c;
+        }
+
+        [data-theme="gelap"] {
+            --bg-color: #000000;
+            --card-color: #1a1a1a;
+            --text-color: #ffffff;
+            --sidebar-color: #111111;
+        }
+
+        [data-theme="terang"] {
+            --bg-color: #ffffff;
+            --card-color: #f9f9f9;
+            --text-color: #000000;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        body { margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
+
+        /* Login Styling */
+        .login-page {
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            background-size: cover; background-position: center;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 100%; max-width: 400px; text-align: center;
+        }
+        .login-card img { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 15px; border: 3px solid var(--primary-color); }
+        .login-card h2 { margin: 0; color: #333; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        button { width: 100%; padding: 12px; background: var(--primary-color); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+
+        /* Sidebar Guru */
+        .guru-wrapper { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px; background: var(--sidebar-color); color: white;
+            display: flex; flex-direction: column; position: fixed; height: 100%;
+        }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header img { width: 60px; border-radius: 50%; }
+        .sidebar-menu { list-style: none; padding: 0; flex: 1; overflow-y: auto; }
+        .sidebar-menu li { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; }
+        .sidebar-menu li i { margin-right: 15px; width: 20px; }
+        .sidebar-menu li:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-menu li.active { background: var(--primary-color); }
+        .content-area { margin-left: 260px; flex: 1; padding: 30px; }
+
+        /* Siswa Dashboard (Android Style) */
+        .siswa-wrapper { max-width: 600px; margin: 0 auto; padding-bottom: 100px; }
+        .siswa-header { background: var(--primary-color); color: white; padding: 25px; border-radius: 0 0 30px 30px; text-align: center; }
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px; }
+        .menu-item { 
+            background: var(--card-color); padding: 20px; border-radius: 15px; text-align: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; 
+        }
+        .menu-item i { font-size: 2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .stats-card { background: var(--card-color); margin: 20px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .card { background: var(--card-color); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn-danger { background: var(--danger-color); }
+        .modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); 
+            display: flex; justify-content: center; align-items: center; z-index: 1000; 
+        }
+        .modal-content { background: var(--card-color); padding: 25px; border-radius: 20px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .header-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
+        .header-logo-container img { width: 50px; height: 50px; border-radius: 50%; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .content-area { margin-left: 0; padding: 15px; }
+        }
+    </style>
+</head>
+<body id="mainBody">
+
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="login-page">
+        <div class="login-card">
+            <img src="https://via.placeholder.com/100" id="appLogoLogin" alt="Logo">
+            <h2 id="appNameLogin">Spenkop Ceria</h2>
+            <p id="appDescLogin">Monitoring Karakter Siswa</p>
+            <select id="role">
+                <option value="guru">Guru</option>
+                <option value="siswa">Siswa</option>
+                <option value="ortu">Orang Tua</option>
+            </select>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Masuk <i class="fa fa-sign-in-alt"></i></button>
+        </div>
+    </div>
+
+    <!-- GURU DASHBOARD -->
+    <div id="guruPage" class="guru-wrapper hidden">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/100" class="app-logo-dyn" alt="Logo">
+                <h3 id="sideAppName">Spenkop Ceria</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li onclick="showSection('g-home')" id="nav-g-home"><i class="fa fa-home"></i> Dashboard</li>
+                <li onclick="showSection('g-profil')"><i class="fa fa-school"></i> Profil Sekolah</li>
+                <li onclick="showSection('g-dok')"><i class="fa fa-images"></i> Dokumentasi</li>
+                <li onclick="showSection('g-identitas')"><i class="fa fa-users"></i> Identitas Siswa</li>
+                <li onclick="showSection('g-riwayat')"><i class="fa fa-history"></i> Riwayat Siswa</li>
+                <li onclick="showSection('g-notif')"><i class="fa fa-bell"></i> Notifikasi</li>
+                <li onclick="showSection('g-laporan')"><i class="fa fa-file-excel"></i> Laporan</li>
+                <li onclick="showSection('g-saran')"><i class="fa fa-comments"></i> Saran & Refleksi</li>
+                <li onclick="showSection('g-pengaturan')"><i class="fa fa-cog"></i> Pengaturan</li>
+                <li onclick="logout()" class="btn-danger"><i class="fa fa-sign-out-alt"></i> Logout</li>
+            </ul>
+        </nav>
+        <div class="content-area">
+            <div class="header-logo-container">
+                <img src="https://via.placeholder.com/100" class="app-logo-dyn">
+                <h2 id="currentSectionTitle">Dashboard Guru</h2>
+            </div>
+
+            <!-- Guru Home -->
+            <div id="g-home" class="g-section">
+                <div class="card" style="display: flex; justify-content: space-around; text-align: center;">
+                    <div><h4>Total Siswa</h4><h2 id="countSiswa">0</h2></div>
+                    <div><h4>Kegiatan</h4><h2 id="countKeg">0</h2></div>
+                </div>
+                <div class="card">
+                    <h3>Statistika Kegiatan Siswa</h3>
+                    <div style="width: 300px; margin: auto;"><canvas id="guruChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Guru Profil -->
+            <div id="g-profil" class="g-section hidden">
+                <div class="card">
+                    <h3>Ubah Profil Aplikasi</h3>
+                    <label>Ubah Logo Sekolah:</label>
+                    <input type="file" id="logoInput" accept="image/*" onchange="changeLogo(this)">
+                    <label>Ubah Background Login:</label>
+                    <input type="file" id="bgInput" accept="image/*" onchange="changeBG(this)">
+                </div>
+            </div>
+
+            <!-- Guru Dokumentasi -->
+            <div id="g-dok" class="g-section hidden">
+                <div class="card">
+                    <h3>Unggah Kegiatan</h3>
+                    <input type="text" id="dokNama" placeholder="Nama Kegiatan">
+                    <textarea id="dokDesc" placeholder="Deskripsi"></textarea>
+                    <input type="date" id="dokTgl">
+                    <input type="file" id="dokFile" accept="image/*">
+                    <button onclick="simpanDok()">Unggah Sekarang</button>
+                </div>
+                <div id="dokListGuru"></div>
+            </div>
+
+            <!-- Guru Identitas -->
+            <div id="g-identitas" class="g-section hidden">
+                <div id="identitasListGuru"></div>
+            </div>
+
+            <!-- Guru Riwayat -->
+            <div id="g-riwayat" class="g-section hidden">
+                <div id="riwayatListGuru"></div>
+            </div>
+
+            <!-- Guru Notif -->
+            <div id="g-notif" class="g-section hidden">
+                <div class="card">
+                    <h3>Kirim Notifikasi Peringatan</h3>
+                    <input type="text" id="notifJudul" placeholder="Judul Peringatan">
+                    <input type="date" id="notifTgl">
+                    <textarea id="notifIsi" placeholder="Pesan Peringatan"></textarea>
+                    <button onclick="kirimNotif()">Kirim Notifikasi</button>
+                </div>
+            </div>
+
+            <!-- Guru Laporan -->
+            <div id="g-laporan" class="g-section hidden">
+                <div class="card">
+                    <h3>Backup Data</h3>
+                    <button onclick="exportExcel()">Export ke Excel</button><br><br>
+                    <button onclick="exportPDF()" style="background:#e67e22">Export ke PDF</button>
+                </div>
+            </div>
+
+            <!-- Guru Pengaturan -->
+            <div id="g-pengaturan" class="g-section hidden">
+                <div class="card">
+                    <h3>Setelan Sistem</h3>
+                    <input type="text" id="setAppName" placeholder="Ubah Nama Aplikasi">
+                    <input type="text" id="setAppDesc" placeholder="Ubah Deskripsi Aplikasi">
+                    <select id="setTema" onchange="ubahTema(this.value)">
+                        <option value="normal">Normal</option>
+                        <option value="terang">Terang</option>
+                        <option value="gelap">Gelap</option>
+                    </select>
+                    <h4>Ubah Password</h4>
+                    <input type="text" id="passGuru" placeholder="Password Guru">
+                    <input type="text" id="passSiswa" placeholder="Password Siswa">
+                    <input type="text" id="passOrtu" placeholder="Password Orang Tua">
+                    <button onclick="simpanSetelan()">Simpan Semua Setelan</button>
+                    <hr>
+                    <button onclick="exportMySQL()" style="background:#2ecc71">Backup ke MySQL Script</button><br><br>
+                    <button onclick="resetData()" class="btn-danger">RESET DATA PERMANEN</button>
+                </div>
+            </div>
+
+            <!-- Saran -->
+            <div id="g-saran" class="g-section hidden">
+                <div id="saranList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SISWA DASHBOARD -->
+    <div id="siswaPage" class="siswa-wrapper hidden">
+        <div class="siswa-header">
+            <img src="https://via.placeholder.com/80" class="app-logo-dyn" style="width:70px; border-radius:50%">
+            <h2 id="sisWelcome">Halo, Siswa!</h2>
+            <p>Dashboard Monitoring Karakter</p>
+        </div>
+
+        <div class="stats-card">
+            <h4>Statistik Saya</h4>
+            <div style="width: 200px; margin: auto;"><canvas id="siswaChart"></canvas></div>
+        </div>
+
+        <div class="menu-grid">
+            <div class="menu-item" onclick="openForm('Bangun Pagi')"><i class="fa fa-sun"></i><br>Bangun Pagi</div>
+            <div class="menu-item" onclick="openForm('Beribadah')"><i class="fa fa-pray"></i><br>Beribadah</div>
+            <div class="menu-item" onclick="openForm('Berolahraga')"><i class="fa fa-running"></i><br>Olahraga</div>
+            <div class="menu-item" onclick="openForm('Makan Sehat')"><i class="fa fa-apple-whole"></i><br>Makan Sehat</div>
+            <div class="menu-item" onclick="openForm('Gemar Belajar')"><i class="fa fa-book"></i><br>Belajar</div>
+            <div class="menu-item" onclick="openForm('Sosial')"><i class="fa fa-users"></i><br>Sosial</div>
+            <div class="menu-item" onclick="openForm('Tidur Cepat')"><i class="fa fa-moon"></i><br>Tidur Cepat</div>
+            <div class="menu-item" onclick="showSectionSiswa('s-notif')"><i class="fa fa-bell"></i><br>Notifikasi</div>
+            <div class="menu-item" onclick="showSectionSiswa('s-dok')"><i class="fa fa-images"></i><br>Dokumentasi</div>
+            <div class="menu-item" onclick="logout()" style="color:red"><i class="fa fa-sign-out-alt"></i><br>Logout</div>
+        </div>
+
+        <div id="s-dok" class="hidden" style="padding:20px"></div>
+        <div id="s-notif" class="hidden" style="padding:20px"></div>
+    </div>
+
+    <!-- ORANG TUA DASHBOARD -->
+    <div id="ortuPage" class="siswa-wrapper hidden">
+        <div class="siswa-header" style="background: var(--accent-color);">
+            <h2>Monitoring Orang Tua</h2>
+            <p>Memantau Perkembangan Anak</p>
+        </div>
+        <div id="ortuContent" style="padding:20px">
+            <div class="card"><h3>Identitas Anak</h3><div id="ortuIdentitas"></div></div>
+            <div class="card"><h3>Riwayat Kegiatan</h3><div id="ortuRiwayat"></div></div>
+            <div class="card"><h3>Notifikasi Guru</h3><div id="ortuNotif"></div></div>
+            <button onclick="logout()" class="btn-danger">Logout</button>
+        </div>
+    </div>
+
+    <!-- MODAL FORM IDENTITAS SISWA -->
+    <div id="modalIdentitas" class="modal hidden">
+        <div class="modal-content">
+            <h3>Lengkapi Identitas Diri</h3>
+            <input type="text" id="sisNama" placeholder="Nama Lengkap">
+            <input type="text" id="sisAlamat" placeholder="Alamat">
+            <input type="text" id="sisTtl" placeholder="Tempat Tanggal Lahir">
+            <input type="text" id="sisKls" placeholder="Kelas">
+            <button onclick="simpanIdentitas()">Simpan Data & Lanjut</button>
+        </div>
+    </div>
+
+    <!-- MODAL FORM KEGIATAN -->
+    <div id="modalKegiatan" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="formTitle">Form Kegiatan</h3>
+            <p id="formDesc"></p>
+            <input type="date" id="formTgl">
+            <div id="dynamicFields"></div>
+            <label>Paraf (Centang Jika Ada):</label><br>
+            <input type="checkbox" id="parafGuru" style="width:auto"> Guru 
+            <input type="checkbox" id="parafOrtu" style="width:auto"> Orang Tua
+            <button onclick="simpanKegiatanSiswa()">Unggah Kegiatan</button>
+            <button onclick="closeModal()" style="background:#888; margin-top:10px">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        // === DATABASE INITIALIZATION ===
+        let db = JSON.parse(localStorage.getItem('db_spenkop')) || {
+            config: { appName: 'Spenkop Ceria', appDesc: 'Monitoring Karakter Siswa', logo: '', bg: '', theme: 'normal' },
+            users: { guru: '12345', siswa: '123', ortu: '1234' },
+            identitasSiswa: [],
+            riwayatKegiatan: [],
+            dokumentasi: [],
+            notifikasi: [],
+            saran: []
+        };
+
+        let currentSiswa = null;
+
+        function saveDB() {
+            localStorage.setItem('db_spenkop', JSON.stringify(db));
+            
+            // SINKRONISASI KE GOOGLE SHEETS
+            // Ganti URL dengan URL Deployment Google Apps Script Anda
+            fetch('https://script.google.com/macros/s/AKfycbxTOJwwweJHvMBH2Ig-T8XEIkzu_lrEZghcgzaGUp9SeGXxz7y14907sLQFyhgqEzFvNw/exec', {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(db)
+            });
+            
+            refreshUI();
+        }
+// Fungsi untuk mengambil data terbaru dari Google Sheets saat aplikasi dibuka
+function loadDB() {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxTOJwwweJHvMBH2Ig-T8XEIkzu_lrEZghcgzaGUp9SeGXxz7y14907sLQFyhgqEzFvNw/exec'; // PASTE LINK ANDA DISINI (SAMA DENGAN BARIS 331)
+    
+    fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+            if (data && Object.keys(data).length > 0) {
+                db = data; // Memasukkan data dari Google Sheets ke aplikasi
+                localStorage.setItem('db_spenkop', JSON.stringify(db)); // Simpan cadangan di laptop
+                refreshUI(); // Perbarui tampilan (munculkan nama siswa & kegiatannya)
+            }
+        })
+        .catch(error => console.error('Gagal sinkronisasi data:', error));
+}
+
+// Menjalankan fungsi ambil data otomatis saat halaman web dibuka
+window.onload = loadDB;
+        // === AUTHENTICATION ===
+        function login() {
+            const role = document.getElementById('role').value;
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            if (role === 'guru' && user === 'guru' && pass === db.users.guru) {
+                showPage('guruPage');
+            } else if (role === 'siswa' && pass === db.users.siswa) {
+                const exist = db.identitasSiswa.find(s => s.pass === pass);
+                if (exist) {
+                    currentSiswa = exist;
+                    showPage('siswaPage');
+                } else {
+                    document.getElementById('modalIdentitas').classList.remove('hidden');
+                }
+            } else if (role === 'ortu' && user === 'orangtua' && pass === db.users.ortu) {
+                showPage('ortuPage');
+            } else {
+                alert('Username atau Password Salah!');
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        function showPage(id) {
+            document.querySelectorAll('body > div').forEach(p => p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            refreshUI();
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.g-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+            document.getElementById('currentSectionTitle').innerText = id.replace('g-', '').toUpperCase();
+        }
+
+        // === FITUR GURU ===
+        function changeLogo(input) {
+            if (input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { db.config.logo = e.target.result; saveDB(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function changeBG(input) {
+            if (input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { db.config.bg = e.target.result; saveDB(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function simpanDok() {
+            const file = document.getElementById('dokFile').files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                db.dokumentasi.push({
+                    id: Date.now(),
+                    nama: document.getElementById('dokNama').value,
+                    desc: document.getElementById('dokDesc').value,
+                    tgl: document.getElementById('dokTgl').value,
+                    img: e.target.result
+                });
+                saveDB();
+                alert('Dokumentasi Berhasil Diunggah');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function hapusDok(id) {
+            db.dokumentasi = db.dokumentasi.filter(d => d.id !== id);
+            saveDB();
+        }
+
+        function hapusSiswa(index) {
+            db.identitasSiswa.splice(index, 1);
+            saveDB();
+        }
+
+        function hapusRiwayat(index) {
+            db.riwayatKegiatan.splice(index, 1);
+            saveDB();
+        }
+
+        function kirimNotif() {
+            db.notifikasi.push({
+                judul: document.getElementById('notifJudul').value,
+                tgl: document.getElementById('notifTgl').value,
+                isi: document.getElementById('notifIsi').value
+            });
+            saveDB();
+            alert('Notifikasi Terkirim!');
+        }
+
+        function ubahTema(val) {
+            db.config.theme = val;
+            saveDB();
+        }
+
+        function simpanSetelan() {
+            db.config.appName = document.getElementById('setAppName').value || db.config.appName;
+            db.config.appDesc = document.getElementById('setAppDesc').value || db.config.appDesc;
+            db.users.guru = document.getElementById('passGuru').value || db.users.guru;
+            db.users.siswa = document.getElementById('passSiswa').value || db.users.siswa;
+            db.users.ortu = document.getElementById('passOrtu').value || db.users.ortu;
+            saveDB();
+            alert('Setelan disimpan!');
+        }
+
+        function resetData() {
+            if(confirm("Hapus semua data secara permanen?")) {
+                localStorage.removeItem('db_spenkop');
+                location.reload();
+            }
+        }
+
+        // === FITUR SISWA ===
+        function simpanIdentitas() {
+            const data = {
+                nama: document.getElementById('sisNama').value,
+                alamat: document.getElementById('sisAlamat').value,
+                ttl: document.getElementById('sisTtl').value,
+                kls: document.getElementById('sisKls').value,
+                pass: '123'
+            };
+            db.identitasSiswa.push(data);
+            currentSiswa = data;
+            saveDB();
+            document.getElementById('modalIdentitas').classList.add('hidden');
+            showPage('siswaPage');
+        }
+
+        let selectedKategori = "";
+        function openForm(kat) {
+            selectedKategori = kat;
+            const modal = document.getElementById('modalKegiatan');
+            const title = document.getElementById('formTitle');
+            const desc = document.getElementById('formDesc');
+            const fields = document.getElementById('dynamicFields');
+            modal.classList.remove('hidden');
+            title.innerText = kat;
+            fields.innerHTML = "";
+
+            if(kat === 'Bangun Pagi') {
+                desc.innerText = "Mari membiasakan bangun pagi tepat waktu.";
+                fields.innerHTML = `<label>Bangun Pagi?</label><select id="f1"><option>Ya</option><option>Tidak</option></select>
+                                    <label>Jam Berapa:</label><input type="time" id="f2">`;
+            } else if(kat === 'Beribadah') {
+                desc.innerText = "Shalat 5 waktu dan tadarus.";
+                fields.innerHTML = `<label>Waktu Shalat (Centang):</label><br>
+                <input type="checkbox" class="c-box" value="Subuh"> Subuh 
+                <input type="checkbox" class="c-box" value="Zuhur"> Zuhur 
+                <input type="checkbox" class="c-box" value="Asar"> Asar 
+                <input type="checkbox" class="c-box" value="Magrib"> Magrib 
+                <input type="checkbox" class="c-box" value="Isya"> Isya<br>
+                <input type="text" id="f1" placeholder="Bacaan Quran (Surah/Ayat)">`;
+            } else if(kat === 'Berolahraga') {
+                desc.innerText = "Jaga kesehatan fisik dengan olahraga.";
+                fields.innerHTML = `<label>Olahraga?</label><select id="f1"><option>Ya</option><option>Tidak</option></select>
+                                    <input type="text" id="f2" placeholder="Jenis Olahraga">`;
+            } else if(kat === 'Makan Sehat') {
+                desc.innerText = "Makan 3 kali sehari menu gizi seimbang.";
+                fields.innerHTML = `<label>Makan 3x?</label><select id="f1"><option>Ya</option><option>Tidak</option></select>
+                                    <input type="text" id="f2" placeholder="Menu Pagi">
+                                    <input type="text" id="f3" placeholder="Menu Siang">
+                                    <input type="text" id="f4" placeholder="Menu Malam">`;
+            } else if(kat === 'Gemar Belajar') {
+                desc.innerText = "Membaca dan mempelajari hal baru.";
+                fields.innerHTML = `<label>Belajar Hari Ini?</label><select id="f1"><option>Ya</option><option>Tidak</option></select>
+                                    <input type="text" id="f2" placeholder="Materi yang dipelajari">`;
+            } else if(kat === 'Sosial') {
+                desc.innerText = "Membantu orang lain di sekitar.";
+                fields.innerHTML = `<input type="text" id="f1" placeholder="Kegiatan yang dilakukan">
+                                    <label>Bersama:</label><br>
+                                    <input type="checkbox" class="c-box" value="Sendiri"> Sendiri 
+                                    <input type="checkbox" class="c-box" value="Keluarga"> Keluarga 
+                                    <input type="checkbox" class="c-box" value="Teman"> Teman`;
+            } else if(kat === 'Tidur Cepat') {
+                desc.innerText = "Istirahat cukup maksimal jam 21.00.";
+                fields.innerHTML = `<label>Tidur Cepat?</label><select id="f1"><option>Ya</option><option>Tidak</option></select>
+                                    <label>Jam Tidur:</label><input type="time" id="f2">`;
+            }
+            fields.innerHTML += `<textarea id="f_cat" placeholder="Catatan/Keterangan Tambahan"></textarea>`;
+        }
+
+        function closeModal() { document.getElementById('modalKegiatan').classList.add('hidden'); }
+
+        function simpanKegiatanSiswa() {
+            const data = {
+                nama: currentSiswa.nama,
+                kls: currentSiswa.kls,
+                kategori: selectedKategori,
+                tgl: document.getElementById('formTgl').value,
+                parafGuru: document.getElementById('parafGuru').checked,
+                parafOrtu: document.getElementById('parafOrtu').checked,
+                catatan: document.getElementById('f_cat').value
+            };
+            db.riwayatKegiatan.push(data);
+            saveDB();
+            closeModal();
+            alert('Kegiatan Terkirim!');
+        }
+
+        function showSectionSiswa(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+        // === UI REFRESHER ===
+        function refreshUI() {
+            // Apply Config
+            document.body.setAttribute('data-theme', db.config.theme);
+            document.getElementById('appNameLogin').innerText = db.config.appName;
+            document.getElementById('sideAppName').innerText = db.config.appName;
+            document.getElementById('appDescLogin').innerText = db.config.appDesc;
+            
+            if(db.config.logo) {
+                document.querySelectorAll('.app-logo-dyn').forEach(img => img.src = db.config.logo);
+                document.getElementById('appLogoLogin').src = db.config.logo;
+            }
+            if(db.config.bg) {
+                document.getElementById('loginPage').style.backgroundImage = `url(${db.config.bg})`;
+            }
+
+            // Stats
+            document.getElementById('countSiswa').innerText = db.identitasSiswa.length;
+            document.getElementById('countKeg').innerText = db.riwayatKegiatan.length;
+
+            // Lists Guru
+            document.getElementById('dokListGuru').innerHTML = db.dokumentasi.map(d => `
+                <div class="card">
+                    <img src="${d.img}" style="width:100%; border-radius:10px">
+                    <h4>${d.nama}</h4><p>${d.desc}</p>
+                    <button class="btn-danger" onclick="hapusDok(${d.id})">Hapus</button>
+                </div>
+            `).join('');
+
+            document.getElementById('identitasListGuru').innerHTML = db.identitasSiswa.map((s, i) => `
+                <div class="card">
+                    <h4>${s.nama} (${s.kls})</h4>
+                    <p>${s.alamat} | ${s.ttl}</p>
+                    <button class="btn-danger" onclick="hapusSiswa(${i})">Hapus</button>
+                </div>
+            `).join('');
+
+            document.getElementById('riwayatListGuru').innerHTML = db.riwayatKegiatan.map((r, i) => `
+                <div class="card">
+                    <h4>${r.nama} - ${r.kategori}</h4>
+                    <p>${r.tgl} | Catatan: ${r.catatan}</p>
+                    <p>Paraf: ${r.parafGuru?'Guru ✅':''} ${r.parafOrtu?'Ortu ✅':''}</p>
+                    <button class="btn-danger" onclick="hapusRiwayat(${i})">Hapus</button>
+                </div>
+            `).join('');
+
+            // Siswa Content
+            if(currentSiswa) {
+                document.getElementById('sisWelcome').innerText = `Halo, ${currentSiswa.nama}!`;
+                document.getElementById('s-dok').innerHTML = `<h3>Dokumentasi Sekolah</h3>` + db.dokumentasi.map(d => `<div class="card"><img src="${d.img}" style="width:100%"><h4>${d.nama}</h4></div>`).join('');
+                document.getElementById('s-notif').innerHTML = `<h3>Notifikasi Guru</h3>` + db.notifikasi.map(n => `<div class="card"><b>${n.judul}</b> (${n.tgl})<p>${n.isi}</p></div>`).join('');
+            }
+
+            // Ortu Content
+            if(db.identitasSiswa.length > 0) {
+                const s = db.identitasSiswa[0]; // Simulasi anak pertama
+                document.getElementById('ortuIdentitas').innerHTML = `<p>Nama: ${s.nama}</p><p>Kelas: ${s.kls}</p>`;
+                document.getElementById('ortuRiwayat').innerHTML = db.riwayatKegiatan.filter(r => r.nama === s.nama).map(r => `<p>${r.tgl} - ${r.kategori}</p>`).join('');
+                document.getElementById('ortuNotif').innerHTML = db.notifikasi.map(n => `<div class="card"><b>${n.judul}</b><p>${n.isi}</p></div>`).join('');
+            }
+
+            renderCharts();
+        }
+
+        // === CHARTS & EXPORTS ===
+        let gChart, sChart;
+        function renderCharts() {
+            const data = {
+                labels: ['Bangun', 'Ibadah', 'Olahraga', 'Makan', 'Belajar', 'Sosial', 'Tidur'],
+                datasets: [{
+                    data: [1, 2, 1, 3, 2, 1, 4], // Data Dummy dinamikkan berdasarkan filter riwayatKegiatan
+                    backgroundColor: ['#3498db', '#2ecc71', '#e67e22', '#f1c40f', '#9b59b6', '#1abc9c', '#34495e']
+                }]
+            };
+
+            if(gChart) gChart.destroy();
+            if(sChart) sChart.destroy();
+
+            const ctxG = document.getElementById('guruChart').getContext('2d');
+            gChart = new Chart(ctxG, { type: 'doughnut', data: data });
+
+            const ctxS = document.getElementById('siswaChart').getContext('2d');
+            sChart = new Chart(ctxS, { type: 'doughnut', data: data });
+        }
+
+        function exportExcel() {
+            const ws = XLSX.utils.json_to_sheet(db.riwayatKegiatan);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Riwayat");
+            XLSX.writeFile(wb, "Laporan_Spenkop.xlsx");
+        }
+
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("Laporan Monitoring Siswa", 10, 10);
+            let y = 20;
+            db.riwayatKegiatan.forEach(r => {
+                doc.text(`${r.tgl} - ${r.nama} - ${r.kategori}`, 10, y);
+                y += 10;
+            });
+            doc.save("Laporan_Spenkop.pdf");
+        }
+
+        function exportMySQL() {
+            let sql = "CREATE TABLE IF NOT EXISTS spenkop (id INT AUTO_INCREMENT PRIMARY KEY, data LONGTEXT);\n";
+            sql += `INSERT INTO spenkop (data) VALUES ('${JSON.stringify(db)}');`;
+            const blob = new Blob([sql], {type: 'text/sql'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'backup_db.sql';
+            a.click();
+        }
+
+        // Run on start
+        refreshUI();
+    </script>
+</body>
+</html>
